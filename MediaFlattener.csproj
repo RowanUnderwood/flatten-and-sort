@@ -9,5 +9,5 @@
     <AssemblyName>MediaFlattener</AssemblyName>
     <Version>1.0.0</Version>
   </PropertyGroup>
-  <ItemGroup><Compile Remove="Tests\**" /><None Remove="Tests\**" /></ItemGroup>
+  <ItemGroup><Compile Remove="Tests\**;Linux\**" /><None Remove="Tests\**;Linux\**" /></ItemGroup>
 </Project>

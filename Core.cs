@@ -60,7 +60,7 @@ public static class Engine
             try
             {
                 if (IsLink(File.GetAttributes(cursor)))
-                    throw new IOException($"Links, junctions, and cloud placeholders are skipped: {cursor}");
+                    throw new IOException($"Links, junctions, symlinks, and cloud placeholders are skipped: {cursor}");
             }
             catch (FileNotFoundException) { }
             catch (DirectoryNotFoundException) { }
@@ -74,9 +74,12 @@ public static class Engine
         var f = new FileInfo(path);
         f.Refresh();
         if (!f.Exists) throw new FileNotFoundException("The source file no longer exists.", path);
-        if (IsLink(f.Attributes)) throw new IOException("The source is a link or cloud placeholder.");
-        return new FileStamp(f.Length, f.CreationTimeUtc, f.LastWriteTimeUtc);
+        if (IsLink(f.Attributes)) throw new IOException("The source is a link, symlink, or cloud placeholder.");
+        return new FileStamp(f.Length, CreatedUtc(f), f.LastWriteTimeUtc);
     }
+    // Linux birth times are often missing or reset by copying, so prefer whichever is earlier.
+    public static DateTime CreatedUtc(FileInfo f) => OperatingSystem.IsWindows() || f.CreationTimeUtc <= f.LastWriteTimeUtc
+        ? f.CreationTimeUtc : f.LastWriteTimeUtc;
     private static bool Reserved(string name) => Categories.Contains(name, StringComparer.OrdinalIgnoreCase) ||
         name.Equals(Logs, StringComparison.OrdinalIgnoreCase);
 

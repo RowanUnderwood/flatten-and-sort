@@ -12,6 +12,7 @@ public static class VrVideoDetector
     // A bounded metadata probe, without scanning every frame or modifying the source.
     public static string FindFfprobe()
     {
+        string executable = OperatingSystem.IsWindows() ? "ffprobe.exe" : "ffprobe";
         var folders = new[] { AppContext.BaseDirectory }
             .Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator));
         foreach (string folder in folders)
@@ -22,12 +23,14 @@ public static class VrVideoDetector
                 // Do not search the selected media folder or implicit current directory.
                 string directory = folder.Trim().Trim('"');
                 if (!Path.IsPathFullyQualified(directory)) continue;
-                string candidate = Path.Combine(directory, "ffprobe.exe");
+                string candidate = Path.Combine(directory, executable);
                 if (File.Exists(candidate)) return candidate;
             }
             catch (ArgumentException) { }
         }
-        throw new IOException("VR sorting requires ffprobe.exe (from FFmpeg). Place it beside MediaFlattener.exe or install FFmpeg on PATH, then scan again. You can also turn off VR sorting.");
+        throw new IOException(OperatingSystem.IsWindows()
+            ? "VR sorting requires ffprobe.exe (from FFmpeg). Place it beside MediaFlattener.exe or install FFmpeg on PATH, then scan again. You can also turn off VR sorting."
+            : "VR sorting requires ffprobe (from FFmpeg). Install it with 'sudo apt install ffmpeg' or place it beside media-flattener, then scan again. You can also turn off VR sorting.");
     }
 
     public static VrDetection Probe(string path, string executable, CancellationToken token,

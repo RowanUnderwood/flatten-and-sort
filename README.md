@@ -1,11 +1,14 @@
 # Media Flattener
 
-Native Windows desktop application built with C# and WPF.
+Native desktop application for Windows (C# / WPF) and Linux (C# / Avalonia). Both front ends share the same scanning and moving engine (`Core.cs`, `VrVideoDetector.cs`), so plans, journals and safety rules are identical on both systems.
 
 ## Run
 
-Double-click **Launch Media Flattener.cmd**, or open **App\MediaFlattener.exe**.
+**Windows:** double-click **Launch Media Flattener.cmd**, or open **App\MediaFlattener.exe**.
 The included executable is self-contained for 64-bit Windows; no separate Python or .NET installation is needed.
+
+**Linux:** build once with `./build.sh`, then run **App-linux/media-flattener** (self-contained x64; no .NET runtime needed to run it). Optionally run `./install-desktop.sh` to add a *Media Flattener* entry to your desktop's application menu.
+
 Keep the app in a separate folder from the data you want to organize.
 
 ## Workflow
@@ -40,7 +43,9 @@ The detector checks video streams for ffprobe's spherical mapping/projection met
 
 Untagged VR, stripped metadata, unsupported camera-specific formats and projections unsupported by the installed ffprobe can remain in **video**. Scan notes summarize videos without recognized VR metadata; a negative result does not prove a file is non-VR. Review the preview. Previously sorted videos in the reserved **video** folder are not reclassified automatically.
 
-**Dependency:** install FFmpeg with **ffprobe.exe** on PATH, or place a working ffprobe distribution beside **App/MediaFlattener.exe**. The app checks its own directory first, then absolute PATH directories. ffprobe is already installed on the development computer but is not bundled in this app. If it is missing, an enabled VR scan stops with setup instructions; ordinary sorting works without it.
+**Dependency (Windows):** install FFmpeg with **ffprobe.exe** on PATH, or place a working ffprobe distribution beside **App/MediaFlattener.exe**. The app checks its own directory first, then absolute PATH directories. ffprobe is already installed on the development computer but is not bundled in this app. If it is missing, an enabled VR scan stops with setup instructions; ordinary sorting works without it.
+
+**Dependency (Linux):** install FFmpeg (`sudo apt install ffmpeg`) so **ffprobe** is on PATH, or place an `ffprobe` binary beside **App-linux/media-flattener**.
 
 Probing reads files locally and starts no visible console windows. Each file has a 15-second deadline. Cancellation stops the probe and discards the incomplete scan plan. Corrupt/unreadable files and timed-out probes stay in **video** with scan notes; probe warnings are also reported. Large collections and network shares take longer with metadata scanning enabled.
 
@@ -50,7 +55,9 @@ Existing top-level **image**, **video**, **other**, **vr-video**, and **.flatten
 
 ### Date folders and file limits
 
-Within each category, files are sorted by Windows filesystem creation timestamp, oldest first, and divided into groups of at most the selected limit. Dates displayed in names use the computer's local time zone. This is filesystem creation time, not camera EXIF capture time or video recording time.
+Within each category, files are sorted by filesystem creation timestamp, oldest first, and divided into groups of at most the selected limit. Dates displayed in names use the computer's local time zone. This is filesystem creation time, not camera EXIF capture time or video recording time.
+
+On Linux, the date used is the **earlier of the file's birth time and its modified time**. Many Linux filesystems either do not record a birth time or reset it when files are copied, so modified time usually better reflects when the media was made. Windows uses creation time only.
 
 For example, a group of 1000 images might go into:
 
@@ -62,11 +69,11 @@ The first and last dates come from the oldest and newest creation timestamps in 
 
 - Duplicate filenames receive a numeric suffix during planning, such as `photo (2).jpg`. Existing files are never intentionally overwritten.
 - Files changed since the scan (creation time, modification time, or length), missing sources, and newly occupied destinations are skipped with an error. Changes that preserve all of those metadata values cannot be detected.
-- Directory junctions, symbolic links, and other reparse points (including some cloud placeholders) are skipped. Linked output folders are rejected.
+- Directory junctions, symbolic links (including Linux symlinks), and other reparse points (including some cloud placeholders) are skipped. Linked output folders are rejected.
 - The application's own executable directory is excluded if it is under the chosen root. Selecting that directory or its descendants as the root is rejected.
 - Unreadable files and folders appear in Scan notes. Readable files can still be previewed and moved.
 - Empty source directories remain in place unless **Delete empty source folders after moving** is ticked. Cleanup runs after file moves, deepest folders first, and includes folders already empty at scan time. Only scanned source folders are considered; the selected root, output/log folders, and application folder are kept. Nonempty folders are never recursively deleted. Cleanup can also run when there are no files to move. Changing the checkbox requires a fresh scan.
-- The preview shows how many source folders cleanup will check. Completion reports how many were deleted, and the journal records deletions and errors. Cancellation stops cleanup between folder operations; completed deletions remain. Empty folders are permanently removed, not sent to the Recycle Bin.
+- The preview shows how many source folders cleanup will check. Completion reports how many were deleted, and the journal records deletions and errors. Cancellation stops cleanup between folder operations; completed deletions remain. Empty folders are permanently removed, not sent to the Recycle Bin or Trash.
 - Cancel stops between filesystem operations; the current operation may need to finish. Completed moves stay in their destinations. Closing while busy requests cancellation; close again after it stops.
 - Files are moved, not backed up. There is no automatic undo or rollback.
 
@@ -77,6 +84,17 @@ Each move session writes a JSON-lines journal in **.flattener-logs** under the s
 If writing the journal fails, the session stops. A pending entry without a matching result means the app was interrupted around that move: inspect both paths before acting. Completed files remain in their destinations, and scanning again finds remaining sources. Journals are audit records; they are not an automatic recovery tool.
 
 ## Build and verify
+
+### Linux
+
+Install the .NET 8 SDK (for example with Microsoft's `dotnet-install.sh --channel 8.0`, since Ubuntu 26.04 only packages .NET 10), plus FFmpeg for the VR tests.
+
+    ./build.sh   # publishes App-linux/media-flattener
+    ./test.sh    # engine + VR + headless Avalonia UI tests; renders preview-linux.png
+
+The Linux tests run the same engine test groups as Windows, with symlinks standing in for junctions, plus a Linux date-source test and a headless Avalonia scan → filter → move → cleanup workflow.
+
+### Windows
 
 Install a .NET SDK with Windows desktop build support (the project targets .NET 8 for Windows).
 

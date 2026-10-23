@@ -6,3 +6,9 @@ Tests/obj/
 *.user
 *.suo
 .codex/
+App-linux/
+Linux/bin/
+Linux/obj/
+Tests/Linux/bin/
+Tests/Linux/obj/
+preview-linux.png
