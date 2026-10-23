@@ -1,0 +1,8 @@
+bin/
+obj/
+App/
+Tests/bin/
+Tests/obj/
+*.user
+*.suo
+.codex/

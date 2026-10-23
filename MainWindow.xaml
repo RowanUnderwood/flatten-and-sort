@@ -1,0 +1,77 @@
+<Window x:Class="MediaFlattener.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Media Flattener" Width="1180" Height="900" MinWidth="900" MinHeight="720" Background="#F3F6FA" Foreground="#19283D" FontFamily="Segoe UI" FontSize="14" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+ <Grid Margin="24,18">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid Margin="0,0,0,12">
+   <StackPanel><TextBlock Text="MEDIA FLATTENER" FontSize="12" FontWeight="Bold" Foreground="#396EB0"/>
+    <TextBlock Text="One place for every file." FontSize="30" FontWeight="SemiBold" Margin="0,4,0,4"/>
+    <TextBlock Text="Choose a folder, review the plan, then organize your files." Foreground="#5F7086"/>
+   </StackPanel>
+   <Border Background="#E3ECF9" CornerRadius="12" Padding="14,7" HorizontalAlignment="Right" VerticalAlignment="Top"><TextBlock Text="WINDOWS DESKTOP" FontSize="11" FontWeight="Bold" Foreground="#396EB0"/></Border>
+  </Grid>
+  <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="16">
+   <StackPanel>
+    <TextBlock Text="01   Choose your root folder" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBox x:Name="RootPath" TextChanged="OptionsChanged" ToolTip="Enter or browse to the folder to scan" AutomationProperties.Name="Root folder"/>
+     <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse…" Click="Browse_Click"/>
+     <Button x:Name="ScanButton" Grid.Column="2" Content="Scan folder" Background="#2869C7" Foreground="White" Click="Scan_Click"/>
+    </Grid>
+    <WrapPanel Margin="0,12,0,0" VerticalAlignment="Center">
+     <CheckBox x:Name="DateFolders" Content="Group into folders by creation date" VerticalAlignment="Center" Checked="OptionsChanged" Unchecked="OptionsChanged" Margin="0,0,22,0"/>
+     <TextBlock Text="Maximum files per folder" VerticalAlignment="Center" Margin="0,0,10,0"/>
+     <TextBox x:Name="FileLimit" Text="1000" Width="92" IsEnabled="False" TextChanged="OptionsChanged" AutomationProperties.Name="Maximum files per folder"/>
+    </WrapPanel>
+    <CheckBox x:Name="DeleteEmptyFolders" Content="Delete empty source folders after moving" Margin="0,12,0,0"
+              Checked="OptionsChanged" Unchecked="OptionsChanged"
+              ToolTip="Remove scanned source folders only if empty. The root, output folders, and application folder are kept."/>
+    <CheckBox x:Name="SortVrVideos" Content="Sort videos with VR metadata into vr-video" Margin="0,12,0,0"
+              Checked="OptionsChanged" Unchecked="OptionsChanged"
+              ToolTip="Uses ffprobe to read spherical/projection metadata. Untagged videos stay in video; aspect ratio and stereo layout alone are not reliable VR indicators."/>
+    <TextBlock x:Name="OutputHint" Text="Files go into image, video, and other under this root. Existing output folders (including vr-video) are excluded from scans." FontSize="12" Foreground="#68798D" Margin="0,12,0,0" TextWrapping="Wrap"/>
+    <TextBlock x:Name="DateHint" Text="Date groups use Windows creation time, oldest first. Example: image\2024-01-03 to 2024-06-18" FontSize="12" Foreground="#68798D" Margin="0,5,0,0" TextWrapping="Wrap"/>
+   </StackPanel>
+  </Border>
+  <UniformGrid x:Name="CategoryCounts" Grid.Row="2" Columns="3" Margin="0,12,0,12">
+   <Border Background="#E4EDF9" CornerRadius="10" Padding="18,8" Margin="0,0,10,0"><StackPanel><TextBlock Text="IMAGE" Foreground="#3266A4" FontSize="12" FontWeight="Bold"/><TextBlock x:Name="ImageCount" Text="0" FontSize="24" FontWeight="SemiBold"/><TextBlock x:Name="ImageSize" Text="0 B" Foreground="#63758A" FontSize="12"/></StackPanel></Border>
+   <Border Background="#E9E6F8" CornerRadius="10" Padding="18,8" Margin="0,0,10,0"><StackPanel><TextBlock Text="VIDEO" Foreground="#7156B3" FontSize="12" FontWeight="Bold"/><TextBlock x:Name="VideoCount" Text="0" FontSize="24" FontWeight="SemiBold"/><TextBlock x:Name="VideoSize" Text="0 B" Foreground="#63758A" FontSize="12"/></StackPanel></Border>
+   <Border Background="#E2EFEC" CornerRadius="10" Padding="18,8"><StackPanel><TextBlock Text="OTHER" Foreground="#377B68" FontSize="12" FontWeight="Bold"/><TextBlock x:Name="OtherCount" Text="0" FontSize="24" FontWeight="SemiBold"/><TextBlock x:Name="OtherSize" Text="0 B" Foreground="#63758A" FontSize="12"/></StackPanel></Border>
+   <Border x:Name="VrCard" Visibility="Collapsed" Background="#E0EEF6" CornerRadius="10" Padding="18,8" Margin="10,0,0,0"><StackPanel><TextBlock Text="VR-VIDEO" Foreground="#28748E" FontSize="12" FontWeight="Bold"/><TextBlock x:Name="VrCount" Text="0" FontSize="24" FontWeight="SemiBold"/><TextBlock x:Name="VrSize" Text="0 B" Foreground="#63758A" FontSize="12"/></StackPanel></Border>
+  </UniformGrid>
+  <StackPanel Grid.Row="3" Margin="0,0,0,12">
+   <Grid><TextBlock x:Name="Status" Text="Ready to scan" FontWeight="SemiBold"/><TextBlock x:Name="ProgressCount" HorizontalAlignment="Right" Foreground="#5F7086"/></Grid>
+   <ProgressBar x:Name="ProgressBar" Height="7" Margin="0,8,0,8" Foreground="#2869C7" Background="#DDE5F0" BorderThickness="0"/>
+   <TextBlock x:Name="Detail" Text="Scanning creates a preview. Files move only when you press Continue." Foreground="#5F7086" FontSize="12" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+  </StackPanel>
+  <Border Grid.Row="4" Background="White" CornerRadius="10" Padding="16">
+   <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid Margin="0,0,0,10"><TextBlock Text="02   Review the move plan" FontSize="16" FontWeight="SemiBold"/>
+     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock Text="Show " VerticalAlignment="Center"/><ComboBox x:Name="CategoryFilter" Width="110" SelectedIndex="0" SelectionChanged="FilterChanged"><ComboBoxItem Content="All files"/><ComboBoxItem Content="image"/><ComboBoxItem Content="video"/><ComboBoxItem Content="other"/><ComboBoxItem x:Name="VrFilter" Content="vr-video" Visibility="Collapsed"/></ComboBox></StackPanel>
+    </Grid>
+    <TextBlock x:Name="PreviewSummary" Grid.Row="1" Text="Your preview will appear here." Foreground="#68798D" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+    <TabControl Grid.Row="2" BorderThickness="0">
+     <TabItem Header="Planned moves">
+      <DataGrid x:Name="PreviewGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" BorderThickness="0" RowHeight="32" HeadersVisibility="Column" AlternatingRowBackground="#F7F9FC" SelectionMode="Extended">
+       <DataGrid.Columns>
+        <DataGridTextColumn Header="Type" Binding="{Binding Category}" Width="85"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="ToolTip" Value="{Binding Detection}"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+        <DataGridTextColumn Header="Source (relative to root)" Binding="{Binding SourceDisplay}" Width="*"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="ToolTip" Value="{Binding Source}"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+        <DataGridTextColumn Header="Destination (relative to root)" Binding="{Binding DestinationDisplay}" Width="*"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="ToolTip" Value="{Binding Destination}"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+        <DataGridTextColumn Header="Created" Binding="{Binding Created}" Width="145"/>
+        <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="75"/>
+       </DataGrid.Columns>
+      </DataGrid>
+     </TabItem>
+     <TabItem x:Name="IssuesTab" Header="Scan notes"><TextBox x:Name="Issues" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" BorderThickness="0"/></TabItem>
+    </TabControl>
+   </Grid>
+  </Border>
+  <Grid Grid.Row="5" Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <TextBlock x:Name="Footer" Text="Duplicate names get a suffix. Empty-folder cleanup is optional." Foreground="#68798D" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"/>
+   <StackPanel Grid.Column="1" Orientation="Horizontal">
+    <Button x:Name="LogButton" Content="Open log folder" Visibility="Collapsed" Click="Log_Click"/>
+    <Button x:Name="CancelButton" Content="Cancel" IsEnabled="False" Click="Cancel_Click"/>
+    <Button x:Name="ContinueButton" Content="Continue → Move files" Background="#2869C7" Foreground="White" IsEnabled="False" Click="Continue_Click"/>
+   </StackPanel>
+  </Grid>
+ </Grid>
+</Window>
